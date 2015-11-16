@@ -100,10 +100,13 @@ public class RegisterUser extends AppCompatActivity {
 
                 userService.register(user1, context);
 
-                mysql.execSQL("INSERT INTO USERS(ID,FIRSTNAME,LASTNAME,EMAIL,PASSWORD) VALUES('"+user1.get_id()+"','"+user1.getFirstName()+"' ,'"+user1.getLastName()+"','"+user1.getEmail()+"','"+user1.getPassword()+"')");
-                Intent intent=new Intent(RegisterUser.this,LoginUser.class);
-                intent.putExtra("User", user1);
-                startActivity(intent);
+                if(user1.get_id()!=null) {
+                    mysql.execSQL("INSERT INTO USERS(ID,FIRSTNAME,LASTNAME,EMAIL,PASSWORD) VALUES('" + user1.get_id() + "','" + user1.getFirstName() + "' ,'" + user1.getLastName() + "','" + user1.getEmail() + "','" + user1.getPassword() + "')");
+
+                    Intent intent = new Intent(RegisterUser.this, LoginUser.class);
+                    intent.putExtra("User", user1);
+                    startActivity(intent);
+                }
             }
 
         });

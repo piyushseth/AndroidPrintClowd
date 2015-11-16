@@ -1,6 +1,7 @@
 package com.example.developer.cloudprint.ui;
 
 import android.app.Application;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -38,6 +39,8 @@ public class LoginUser extends AppCompatActivity implements View.OnClickListener
     Cursor result;
     LinearLayout layout;
     private  UserServiceImpl userService;
+    String DB_CREATE = "CREATE TABLE IF NOT EXISTS USERS(ID TEXT PRIMARY KEY, FIRSTNAME TEXT, LASTNAME TEXT, EMAIL TEXT," +
+            "PASSWORD TEXT, TOKEN TEXT)";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +48,8 @@ public class LoginUser extends AppCompatActivity implements View.OnClickListener
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
         setContentView(R.layout.activity_login_user);
+        mysql=this.openOrCreateDatabase("user.db", MODE_PRIVATE, null);
+        mysql.execSQL(DB_CREATE);
         initWidget();
     }
     private void initWidget()
@@ -116,41 +121,31 @@ public class LoginUser extends AppCompatActivity implements View.OnClickListener
 
         userService= new UserServiceImpl();
 
-        try {
-            userService.login(user1, context);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        Log.i("Login Activity", user1.getToken());
+        userService.login(user1, context);
 
+        if(user1.getToken()!= null){
+            Log.i("Login Activity", user1.getToken());
 
+            result=mysql.rawQuery(DB_QUERY,new String []{login_username.getText().toString().trim(),login_password.getText().toString().trim()});
+            Log.i("Result", "Count is " + result.getCount());
+            if(result.getCount()>0){
+                Log.i("SQL Result", "Record already exists in the database");
+                ContentValues cv = new ContentValues();
+                cv.put("TOKEN", user1.getToken());
+                mysql.update("USERS", cv, "ID" + "=" + "'" + user1.get_id() + "'", null);
 
-
-       result=mysql.rawQuery(DB_QUERY,new String []{login_username.getText().toString().trim(),login_password.getText().toString().trim()});
-        Log.i("Result", "Count is " +result.getCount());
-        if(result.getCount()>0){
-            if (result.moveToFirst()) {
-                do {
-                    Log.i("Firstname", result.getString(result.getColumnIndexOrThrow("FIRSTNAME")));
-                    user1.setFirstName(result.getString(result.getColumnIndexOrThrow("FIRSTNAME")));
-                    user1.setLastName(result.getString(result.getColumnIndexOrThrow("LASTNAME")));
-                    user1.set_id(result.getString(result.getColumnIndexOrThrow("ID")));
-//                    user1.setToken(result.getString(result.getColumnIndexOrThrow("TOKEN")));
-                    Log.i("User", user1.toString());
-                } while (result.moveToNext());
+            }
+            else{
+                Log.i("LoginActivity", "Inserting records into the user table");
+                mysql.execSQL("INSERT INTO USERS(ID,FIRSTNAME,LASTNAME,EMAIL,PASSWORD,TOKEN) VALUES('" + user1.get_id() + "','" + user1.getFirstName() + "' ,'" + user1.getLastName() + "','" + user1.getEmail() + "','" + user1.getPassword() + "','" + user1.getToken() +"')");
             }
             Intent intent;
             intent = new Intent(LoginUser.this,MapActivity.class);
             intent.putExtra("User", user1);
             startActivity(intent);
-//            Bundle bundle = new Bundle();
-//            bundle.putString("UserName", user1.getFirstName()+" " +user1.getLastName());
-//            intent.putExtras(bundle);
-//            startActivity(intent);
-
         }
         else{
-            Toast.makeText(LoginUser.this,"Your password or username is wrong", Toast.LENGTH_SHORT).show();
+            Log.i("Token", "No token from server");
         }
     }
 
