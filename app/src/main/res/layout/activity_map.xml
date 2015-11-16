@@ -1,0 +1,102 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:fab="http://schemas.android.com/apk/res-auto"
+    tools:context="com.example.developer.cloudprint.ui.MapActivity">
+
+    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tool="http://schemas.android.com/tools"
+        android:id="@+id/map"
+        android:name = "com.google.android.gms.maps.MapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+
+        />
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="135dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:id="@+id/linearLayoutButton"
+        android:background="@android:color/transparent">
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="50"
+            android:id="@+id/leftButton"
+            android:text="Upload File"/>
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="33"
+            android:id="@+id/printButton"
+            android:text="Print Page"
+
+            />
+    </LinearLayout>
+
+    //Floating Action Menu Start
+    <com.getbase.floatingactionbutton.FloatingActionsMenu
+        android:id="@+id/floatingActionsMenu"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        fab:fab_addButtonColorNormal="@color/color_normal_main"
+        fab:fab_addButtonColorPressed="@color/color_pressed_main"
+        fab:fab_addButtonPlusIconColor="@color/plusIcon"
+        fab:fab_labelStyle="@style/menu_labels_style"
+        >
+
+        <com.getbase.floatingactionbutton.FloatingActionButton
+            android:id="@+id/logout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            fab:fab_colorNormal="@color/color_pressed_bubble1"
+            fab:fab_title="Logout"
+            fab:fab_colorPressed="@color/color_pressed_bubble2"/>
+
+        <com.getbase.floatingactionbutton.FloatingActionButton
+            android:id="@+id/history"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:gravity="center"
+            fab:fab_icon="@drawable/group"
+            fab:fab_colorNormal="@color/color_pressed_bubble1"
+            fab:fab_title="History"
+            fab:fab_colorPressed="@color/color_pressed_bubble2"/>
+
+        <com.getbase.floatingactionbutton.FloatingActionButton
+            android:id="@+id/payment"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:gravity="center"
+            fab:fab_icon="@drawable/search"
+            fab:fab_colorNormal="@color/color_pressed_bubble1"
+            fab:fab_title="Payment"
+            fab:fab_colorPressed="@color/color_pressed_bubble2"/>
+
+
+        <com.getbase.floatingactionbutton.FloatingActionButton
+            android:id="@+id/profile"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:gravity="center"
+            fab:fab_icon="@drawable/refresh"
+            fab:fab_colorNormal="@color/color_pressed_bubble1"
+            fab:fab_title="Profile"
+            fab:fab_colorPressed="@color/color_pressed_bubble2"/>
+
+    </com.getbase.floatingactionbutton.FloatingActionsMenu>
+    //Floating Action Menu End
+
+
+
+</RelativeLayout>
