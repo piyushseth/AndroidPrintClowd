@@ -7,11 +7,13 @@ import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.drawable.ColorDrawable;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.os.Looper;
 import android.provider.SyncStateContract;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
@@ -31,8 +33,13 @@ import com.amazonaws.mobileconnectors.s3.transfermanager.TransferManager;
 import com.amazonaws.mobileconnectors.s3.transfermanager.TransferProgress;
 import com.amazonaws.mobileconnectors.s3.transfermanager.Upload;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3Client;
 import com.dropbox.chooser.android.DbxChooser;
 import com.example.developer.cloudprint.R;
+import com.example.developer.cloudprint.model.Document;
+import com.example.developer.cloudprint.model.User;
+import com.example.developer.cloudprint.services.DocServiceImpl;
+import com.example.developer.cloudprint.services.UserServiceImpl;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -73,9 +80,31 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
     public static final String BUCKET_NAME = "cloudprint";
     public FloatingActionButton profile,payment,history, logout = null;
 
+    //DocumentAPI
+    private User user1;
+    private Document doc;
+    private DocServiceImpl docService;
+    private UserServiceImpl userService;
+    SQLiteDatabase mysql;
+    String DOC_CREATE = "CREATE TABLE IF NOT EXISTS DOCUMENTS(ID TEXT PRIMARY KEY, DOCNAME TEXT, DOCURL TEXT, USER_ID TEXT)";
+    Context context;
+    public static final String BASE_FILE_URL = "https://s3.amazonaws.com/cloudprint/";
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        //DocumentAPI
+        context = this.getApplicationContext();
+
+        mysql=this.openOrCreateDatabase("user.db", MODE_PRIVATE, null);
+        mysql.execSQL(DOC_CREATE);
+
+        Intent i = this.getIntent();
+        user1 = (User)i.getSerializableExtra("User");
+        Log.i("LoggedActivity User", user1.getFirstName() + "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
         setContentView(R.layout.activity_map);
         // setUpMapIfNeeded();
 
@@ -245,8 +274,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
                                     }
                                 });
 
-                                // uploadFile(path);
-
                             }
                         }).start();
 
@@ -261,34 +288,14 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
     }
 
-
-
-
     public void uploadFile(String sourceFileUri) {
 
-
         final String fileName = sourceFileUri;
-
-        HttpURLConnection conn = null;
-        DataOutputStream dos = null;
-        String lineEnd = "\r\n";
-        String twoHyphens = "--";
-        String boundary = "*****";
-        int bytesRead, bytesAvailable, bufferSize;
-        byte[] buffer;
-        int maxBufferSize = 1 * 1024 * 1024;
         File sourceFile = new File(sourceFileUri);
-
+        //Looper.prepare();
         if (!sourceFile.isFile()) {
-
-            //dialog.dismiss();
-
             Log.e("uploadFile", "Source File not exist :"
                     +fileName);
-
-
-            //return 0;
-
         }
         else
         {
@@ -303,127 +310,45 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
             Log.i("uploadFile", "CRED DONE");
 
             TransferManager transferManager = new TransferManager(credentialsProvider);
-            //String bucket = "uni-cloud";
-
 
             Upload upload = transferManager.upload(BUCKET_NAME, sourceFile.getName(), sourceFile);
+            AmazonS3Client client = new AmazonS3Client(credentialsProvider);
+
+            URL fileURL = client.getUrl(BUCKET_NAME, sourceFile.getName());
+
+            Log.i("uploadFile", sourceFile.getName());
+            Log.i("uploadFile", BASE_FILE_URL+sourceFile.getName());
+            Log.i("uploadFile URL", fileURL.toString());
+            Log.i("uploadFile", user1.getFirstName());
+
+
             while (!upload.isDone()){
                 //Show a progress bar...
                 TransferProgress transferred = upload.getProgress();
-                //Toast.makeText(this, "Uploading... ", Toast.LENGTH_LONG).show();
+                Toast.makeText(MapActivity.this, "Uploading... ", Toast.LENGTH_LONG).show();
                 Log.i("Percentage", "" +transferred.getPercentTransferred());
             }
-            Toast.makeText(this, "Uploaded", Toast.LENGTH_LONG).show();
-            printButton.setVisibility(Button.VISIBLE);
+
+            if(upload.isDone()){
+                Toast.makeText(MapActivity.this, "Uploaded", Toast.LENGTH_LONG).show();
+                doc = new Document();
+                doc.setName(sourceFile.getName());
+                doc.setUrl(fileURL.toString());
+
+                docService = new DocServiceImpl();
+                docService.postDocument(user1, doc, context);
+
+                Log.i("Document", "ID is " + user1.get_id());
+                Log.i("Document", "DocID is " + doc.get_id());
+                Log.i("Document", "Name is " + doc.getName());
+                Log.i("Document", "URL is " + doc.getUrl());
+
+                if(doc.get_id()!= null) {
+                    mysql.execSQL("INSERT INTO DOCUMENTS(ID,DOCNAME,DOCURL,USER_ID) VALUES('" + doc.get_id() + "','" + doc.getName() + "' ,'" + doc.getUrl() + "','" + user1.get_id() + "')");
+                }
+            }
 
 
-
-
-
-
-
-//            try {
-//
-//                // open a URL connection to the Servlet
-//                FileInputStream fileInputStream = new FileInputStream(sourceFile);
-//                URL url = new URL(upLoadServerUri);
-//
-//                // Open a HTTP  connection to  the URL
-//                conn = (HttpURLConnection) url.openConnection();
-//                conn.setDoInput(true); // Allow Inputs
-//                conn.setDoOutput(true); // Allow Outputs
-//                conn.setUseCaches(false); // Don't use a Cached Copy
-//                conn.setRequestMethod("POST");
-//                conn.setRequestProperty("Connection", "Keep-Alive");
-//                conn.setRequestProperty("ENCTYPE", "multipart/form-data");
-//                conn.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
-//                conn.setRequestProperty("uploaded_file", fileName);
-//
-//                dos = new DataOutputStream(conn.getOutputStream());
-//
-//                dos.writeBytes(twoHyphens + boundary + lineEnd);
-//                dos.writeBytes("Content-Disposition: form-data; name=\"uploaded_file\";filename=\""
-//                        + fileName + "\"" + lineEnd);
-//
-//                dos.writeBytes(lineEnd);
-//
-//                // create a buffer of  maximum size
-//                bytesAvailable = fileInputStream.available();
-//
-//                bufferSize = Math.min(bytesAvailable, maxBufferSize);
-//                buffer = new byte[bufferSize];
-//
-//                // read file and write it into form...
-//                bytesRead = fileInputStream.read(buffer, 0, bufferSize);
-//
-//                while (bytesRead > 0) {
-//
-//                    dos.write(buffer, 0, bufferSize);
-//                    bytesAvailable = fileInputStream.available();
-//                    bufferSize = Math.min(bytesAvailable, maxBufferSize);
-//                    bytesRead = fileInputStream.read(buffer, 0, bufferSize);
-//
-//                }
-//
-//                // send multipart form data necesssary after file data...
-//                dos.writeBytes(lineEnd);
-//                dos.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
-//
-//                // Responses from the server (code and message)
-//                serverResponseCode = conn.getResponseCode();
-//                String serverResponseMessage = conn.getResponseMessage();
-//
-//                Log.i("uploadFile", "HTTP Response is : "
-//                        + serverResponseMessage + ": " + serverResponseCode);
-//
-//                if(serverResponseCode == 200){
-//                    String msg = "File Upload Completed.\n\n See uploaded file here : \n\n"
-//                            +" http://www.chavisjsu.com/uploads/"
-//                            +fileName;
-//                    Toast.makeText(MapActivity.this, msg,
-//                            Toast.LENGTH_SHORT).show();
-//                    Toast.makeText(MapActivity.this, "File Upload Complete.",
-//                            Toast.LENGTH_SHORT).show();
-//                    printButton.setVisibility(Button.VISIBLE);
-//                    NoOfPage.setVisibility(View.VISIBLE);
-//                    NoOfPage.setText(" ");
-//                }
-//
-//                //close the streams //
-//                fileInputStream.close();
-//                dos.flush();
-//                dos.close();
-//
-//            } catch (MalformedURLException ex) {
-//
-//                //dialog.dismiss();
-//                ex.printStackTrace();
-//
-//                runOnUiThread(new Runnable() {
-//                    public void run() {
-//                        Toast.makeText(MapActivity.this, "MalformedURLException",
-//                                Toast.LENGTH_SHORT).show();
-//                    }
-//                });
-//
-//                Log.e("Upload file to server", "error: " + ex.getMessage(), ex);
-//            } catch (Exception e) {
-//
-//                //dialog.dismiss();
-//                e.printStackTrace();
-//
-//                runOnUiThread(new Runnable() {
-//                    public void run() {
-//
-//                        Toast.makeText(MapActivity.this, "Got Exception : see logcat ",
-//                                Toast.LENGTH_SHORT).show();
-//                    }
-//                });
-//                Log.e("Upload file to server Exception", "Exception : "
-//                        + e.getMessage(), e);
-//            }
-//            //dialog.dismiss();
-//            return serverResponseCode;
 
         } // End else block
     }

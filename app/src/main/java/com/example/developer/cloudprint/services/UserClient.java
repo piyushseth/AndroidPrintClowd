@@ -1,7 +1,7 @@
 package com.example.developer.cloudprint.services;
 
 /**
- * Created by Ankush on 10/17/15.
+ * Created by Chavi on 10/17/15.
  */
 import android.content.Context;
 
@@ -30,6 +30,9 @@ public class UserClient {
         client.post(context, getAbsoluteUrl(url), entity, type, responseHandler);
     }
 
+    public static void addHeader(String header, String value){
+        client.addHeader(header, value);
+    }
 
     private static String getAbsoluteUrl(String relativeUrl) {
         return BASE_URL + relativeUrl;
